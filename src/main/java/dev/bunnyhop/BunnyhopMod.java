@@ -2,6 +2,9 @@ package dev.bunnyhop;
 
 import com.mojang.logging.LogUtils;
 import dev.bunnyhop.config.BunnyhopClientConfig;
+import dev.bunnyhop.forge.client.BunnyhopClientSetup;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -14,6 +17,7 @@ public class BunnyhopMod {
 
     public BunnyhopMod() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, BunnyhopClientConfig.SPEC);
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> BunnyhopClientSetup::registerConfigScreen);
         LOGGER.info("Bunnyhop Forge movement core loaded");
     }
 }

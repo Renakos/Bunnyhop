@@ -3,10 +3,12 @@
 Базовый каркас Minecraft-мода под **IntelliJ IDEA** для **Forge 1.20.1**.
 
 Теперь в моде есть:
-- более плавный стрейф в воздухе (инпут сглаживается, нет резкого мгновенного рывка влево/вправо)
+- плавный стрейф в воздухе (без резкого мгновенного рывка строго влево/вправо)
 - Source-like ускорение в воздухе и на земле
-- сохранение импульса между прыжками
+- сохранение части forward momentum при стрейфах
+- отключение bunnyhop-физики в воде/лаве/полете
 - прыжок колесом мыши вниз (scroll down jump)
+- экран настроек мода в **Mods -> Bunnyhop -> Config**
 
 ## IntelliJ IDEA
 
@@ -18,10 +20,10 @@
 ## Где логика движения
 
 - Мод: `dev.bunnyhop.BunnyhopMod`
-- Константы физики: `dev.bunnyhop.movement.BunnyhopMovementConfig`
 - Контроллер ускорения/air-control: `dev.bunnyhop.movement.BunnyhopMovementController`
 - Серверный тик: `dev.bunnyhop.forge.BunnyhopMovementEvents`
 - Клиентский инпут + колесо мыши: `dev.bunnyhop.forge.client.BunnyhopClientEvents`
+- Экран настроек: `dev.bunnyhop.forge.client.BunnyhopSettingsScreen`
 - Клиентские настройки: `dev.bunnyhop.config.BunnyhopClientConfig`
 
 ## Настройки мода
@@ -29,9 +31,18 @@
 Файл создается Forge-ом: `config/bunnyhop-client.toml`
 
 Ключевые параметры:
-- `enableBunnyhop = true` — вкл/выкл модифицированное движение
-- `scrollDownJump = true` — прыжок на колесико мыши вниз
-- `strafeSmoothing = 0.18` — плавность стрейфа (чем выше, тем плавнее и медленнее реакция)
+- `enableBunnyhop`
+- `scrollDownJump`
+- `strafeSmoothing`
+- `groundAcceleration`
+- `airAcceleration`
+- `airControl`
+- `groundFriction`
+- `momentumRetention`
+- `maxAirSpeed`
+- `maxGroundSpeed`
+
+> Если слишком резко уводит вбок — увеличь `strafeSmoothing` и/или уменьшай `airAcceleration`.
 
 ## Ошибка «проект одновременно Forge и Fabric»
 

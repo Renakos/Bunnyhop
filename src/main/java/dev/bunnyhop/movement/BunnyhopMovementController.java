@@ -16,40 +16,48 @@ public final class BunnyhopMovementController {
     }
 
     public static Vec3 apply(Player player, Vec3 input) {
-        if (!BunnyhopClientConfig.ENABLE_BUNNYHOP.get()) {
+        if (!BunnyhopClientConfig.ENABLE_BUNNYHOP.get() || shouldSkip(player)) {
             return player.getDeltaMovement();
         }
 
         Vec3 velocity = player.getDeltaMovement();
         Vec3 localInput = smoothInput(player, new Vec3(input.x, 0.0, input.z));
-        float rawMagnitude = Mth.sqrt((float) (localInput.x * localInput.x + localInput.z * localInput.z));
+        float inputMagnitude = (float) localInput.length();
 
-        if (rawMagnitude <= 0.0001F) {
+        if (inputMagnitude <= 0.0001F) {
             if (player.onGround()) {
-                return new Vec3(velocity.x * BunnyhopMovementConfig.GROUND_FRICTION, velocity.y, velocity.z * BunnyhopMovementConfig.GROUND_FRICTION);
+                return scaleHorizontal(velocity, BunnyhopClientConfig.GROUND_FRICTION.get());
             }
-            return new Vec3(velocity.x * BunnyhopMovementConfig.MOMENTUM_RETENTION, velocity.y, velocity.z * BunnyhopMovementConfig.MOMENTUM_RETENTION);
+            return scaleHorizontal(velocity, BunnyhopClientConfig.MOMENTUM_RETENTION.get());
         }
 
         Vec3 wishDir = rotateInputToWorld(player, localInput).normalize();
 
         if (player.onGround()) {
-            velocity = new Vec3(velocity.x * BunnyhopMovementConfig.GROUND_FRICTION, velocity.y, velocity.z * BunnyhopMovementConfig.GROUND_FRICTION);
-            velocity = accelerate(velocity, wishDir, BunnyhopMovementConfig.MAX_GROUND_SPEED, BunnyhopMovementConfig.GROUND_ACCELERATION);
-            if (Math.abs(input.x) > 0.01F && Math.abs(input.z) > 0.01F) {
-                velocity = new Vec3(velocity.x * BunnyhopMovementConfig.STRAFE_BOOST, velocity.y, velocity.z * BunnyhopMovementConfig.STRAFE_BOOST);
-            }
+            velocity = scaleHorizontal(velocity, BunnyhopClientConfig.GROUND_FRICTION.get());
+            velocity = accelerate(
+                    velocity,
+                    wishDir,
+                    BunnyhopClientConfig.MAX_GROUND_SPEED.get(),
+                    BunnyhopClientConfig.GROUND_ACCELERATION.get() * inputMagnitude
+            );
             return velocity;
         }
 
-        float airAccel = BunnyhopMovementConfig.AIR_ACCELERATION;
-        if (player.isShiftKeyDown()) {
-            airAccel *= BunnyhopMovementConfig.SHIFT_IN_AIR_MULTIPLIER;
-        }
+        velocity = accelerate(
+                velocity,
+                wishDir,
+                BunnyhopClientConfig.MAX_AIR_SPEED.get(),
+                BunnyhopClientConfig.AIR_ACCELERATION.get() * inputMagnitude
+        );
 
-        velocity = accelerate(velocity, wishDir, BunnyhopMovementConfig.MAX_AIR_SPEED, airAccel);
-        velocity = applyAirControl(velocity, wishDir, rawMagnitude);
-        return new Vec3(velocity.x * BunnyhopMovementConfig.MOMENTUM_RETENTION, velocity.y, velocity.z * BunnyhopMovementConfig.MOMENTUM_RETENTION);
+        velocity = applyAirControl(velocity, wishDir, inputMagnitude, BunnyhopClientConfig.AIR_CONTROL.get());
+        velocity = preserveForwardMomentum(velocity, player);
+        return scaleHorizontal(velocity, BunnyhopClientConfig.MOMENTUM_RETENTION.get());
+    }
+
+    private static boolean shouldSkip(Player player) {
+        return player.isInWater() || player.isInLava() || player.isFallFlying() || player.getAbilities().flying || player.isPassenger();
     }
 
     private static Vec3 smoothInput(Player player, Vec3 input) {
@@ -76,7 +84,7 @@ public final class BunnyhopMovementController {
         return new Vec3(x, 0.0, z);
     }
 
-    private static Vec3 accelerate(Vec3 velocity, Vec3 wishDir, float maxSpeed, float accel) {
+    private static Vec3 accelerate(Vec3 velocity, Vec3 wishDir, double maxSpeed, double accel) {
         double currentSpeed = velocity.x * wishDir.x + velocity.z * wishDir.z;
         double addSpeed = maxSpeed - currentSpeed;
         if (addSpeed <= 0.0) {
@@ -87,23 +95,43 @@ public final class BunnyhopMovementController {
         return velocity.add(wishDir.x * accelSpeed, 0.0, wishDir.z * accelSpeed);
     }
 
-    private static Vec3 applyAirControl(Vec3 velocity, Vec3 wishDir, float inputMagnitude) {
+    private static Vec3 applyAirControl(Vec3 velocity, Vec3 wishDir, float inputMagnitude, double airControl) {
         if (inputMagnitude <= 0.0001F) {
             return velocity;
         }
 
-        double lateralSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        if (lateralSpeed < 0.0001D) {
+        Vec3 horizontal = new Vec3(velocity.x, 0.0, velocity.z);
+        double speed = horizontal.length();
+        if (speed < 0.0001D) {
             return velocity;
         }
 
-        double dot = (velocity.x * wishDir.x + velocity.z * wishDir.z) / lateralSpeed;
-        double control = BunnyhopMovementConfig.AIR_CONTROL * dot * dot;
+        Vec3 currentDir = horizontal.scale(1.0 / speed);
+        Vec3 blended = currentDir.lerp(wishDir, airControl * inputMagnitude).normalize();
 
-        return new Vec3(
-                velocity.x + wishDir.x * control,
-                velocity.y,
-                velocity.z + wishDir.z * control
-        );
+        return new Vec3(blended.x * speed, velocity.y, blended.z * speed);
+    }
+
+    private static Vec3 preserveForwardMomentum(Vec3 velocity, Player player) {
+        Vec3 look = player.getLookAngle();
+        Vec3 forward = new Vec3(look.x, 0.0, look.z);
+        if (forward.lengthSqr() < 0.0001D) {
+            return velocity;
+        }
+
+        forward = forward.normalize();
+        double forwardSpeed = velocity.x * forward.x + velocity.z * forward.z;
+        if (forwardSpeed <= 0.0D) {
+            return velocity;
+        }
+
+        double clampedForward = Math.max(forwardSpeed * 0.85D, forwardSpeed - 0.02D);
+        Vec3 lateral = new Vec3(velocity.x, 0.0, velocity.z).subtract(forward.scale(forwardSpeed));
+        Vec3 combined = forward.scale(clampedForward).add(lateral);
+        return new Vec3(combined.x, velocity.y, combined.z);
+    }
+
+    private static Vec3 scaleHorizontal(Vec3 velocity, double scale) {
+        return new Vec3(velocity.x * scale, velocity.y, velocity.z * scale);
     }
 }
