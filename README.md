@@ -2,12 +2,11 @@
 
 Базовый каркас Minecraft-мода под **IntelliJ IDEA** для **Forge 1.20.1**.
 
-Реализованы стартовые Source-style механики:
-- Jump control
-- Strafing boost
-- Momentum retention
-- Air acceleration
-- Поведение `Shift` в воздухе без дополнительного замедления
+Теперь в моде есть:
+- более плавный стрейф в воздухе (инпут сглаживается, нет резкого мгновенного рывка влево/вправо)
+- Source-like ускорение в воздухе и на земле
+- сохранение импульса между прыжками
+- прыжок колесом мыши вниз (scroll down jump)
 
 ## IntelliJ IDEA
 
@@ -20,8 +19,19 @@
 
 - Мод: `dev.bunnyhop.BunnyhopMod`
 - Константы физики: `dev.bunnyhop.movement.BunnyhopMovementConfig`
-- Контроллер ускорения: `dev.bunnyhop.movement.BunnyhopMovementController`
-- Подписка на тики игрока: `dev.bunnyhop.forge.BunnyhopMovementEvents`
+- Контроллер ускорения/air-control: `dev.bunnyhop.movement.BunnyhopMovementController`
+- Серверный тик: `dev.bunnyhop.forge.BunnyhopMovementEvents`
+- Клиентский инпут + колесо мыши: `dev.bunnyhop.forge.client.BunnyhopClientEvents`
+- Клиентские настройки: `dev.bunnyhop.config.BunnyhopClientConfig`
+
+## Настройки мода
+
+Файл создается Forge-ом: `config/bunnyhop-client.toml`
+
+Ключевые параметры:
+- `enableBunnyhop = true` — вкл/выкл модифицированное движение
+- `scrollDownJump = true` — прыжок на колесико мыши вниз
+- `strafeSmoothing = 0.18` — плавность стрейфа (чем выше, тем плавнее и медленнее реакция)
 
 ## Ошибка «проект одновременно Forge и Fabric»
 
@@ -44,7 +54,3 @@
    - `./gradlew clean compileJava`
 
 В этом репозитории добавлена проверка `verifyNoFabricLeftovers`, которая остановит сборку, если Fabric-файлы случайно остались.
-
-## Дальше по плану
-
-Для полной замены `PlayerEntity.move` и низкоуровневой коллизии добавляй Mixin/Coremod слой поверх этой базы.
