@@ -1,8 +1,10 @@
 package dev.bunnyhop.forge.client;
 
 import dev.bunnyhop.config.BunnyhopClientConfig;
+import dev.bunnyhop.movement.BunnyhopMovementController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
@@ -35,6 +37,21 @@ public final class BunnyhopClientEvents {
 
         minecraft.options.keyJump.setDown(true);
         keepJumpPressed = true;
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !BunnyhopClientConfig.ENABLE_BUNNYHOP.get()) {
+            return;
+        }
+        if (!(event.player instanceof LocalPlayer player)) {
+            return;
+        }
+
+        Vec3 input = new Vec3(player.xxa, 0.0, player.zza);
+        Vec3 velocity = BunnyhopMovementController.apply(player, input);
+        player.setDeltaMovement(velocity);
+        player.hasImpulse = true;
     }
 
     @SubscribeEvent

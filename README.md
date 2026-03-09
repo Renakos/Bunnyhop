@@ -8,7 +8,7 @@
 - сохранение части forward momentum при стрейфах
 - отключение bunnyhop-физики в воде/лаве/полете
 - прыжок колесом мыши вниз (scroll down jump)
-- экран настроек мода в **Mods -> Bunnyhop -> Config**
+- богатый экран настроек мода в **Mods -> Bunnyhop -> Config** (переключатели + кнопки +/- для всех параметров физики)
 
 ## IntelliJ IDEA
 
@@ -42,7 +42,7 @@
 - `maxAirSpeed`
 - `maxGroundSpeed`
 
-> Если слишком резко уводит вбок — увеличь `strafeSmoothing` и/или уменьшай `airAcceleration`.
+> Если кажется, что нет разницы с ваниллой: увеличь `airAcceleration` до `0.08-0.12`, `maxAirSpeed` до `1.0-1.3`, а `strafeSmoothing` держи в диапазоне `0.10-0.22`.
 
 ## Ошибка «проект одновременно Forge и Fabric»
 
