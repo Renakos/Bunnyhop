@@ -13,3 +13,4 @@ public class BunnyhopMod {
         LOGGER.info("Bunnyhop Forge movement core loaded");
     }
 }
+            
