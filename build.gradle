@@ -1,0 +1,105 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+}
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {}
+        server {}
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version: minecraft_version,
+            forge_version    : forge_version,
+            mod_id           : mod_id,
+            mod_name         : mod_name,
+            mod_version      : mod_version,
+            mod_authors      : mod_authors,
+            mod_description  : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors
+        ])
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+}
+
+
+tasks.register('verifyNoFabricLeftovers') {
+    group = 'verification'
+    description = 'Fails the build if Fabric-only files were accidentally kept in the Forge branch.'
+
+    doLast {
+        def forbiddenFiles = [
+                'src/main/resources/fabric.mod.json',
+                'src/main/resources/bunnyhop.mixins.json',
+                'src/main/java/dev/bunnyhop/mixin/PlayerEntityMixin.java'
+        ]
+
+        def existingForbidden = forbiddenFiles.findAll { file(it).exists() }
+        if (!existingForbidden.isEmpty()) {
+            throw new GradleException('Forge project contains Fabric leftovers: ' + existingForbidden.join(', ') +
+                    '. Remove these files and keep only Forge sources/resources.')
+        }
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('verifyNoFabricLeftovers')
+}
