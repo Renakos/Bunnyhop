@@ -1,15 +1,16 @@
 package dev.bunnyhop;
 
-import net.fabricmc.api.ModInitializer;
+import com.mojang.logging.LogUtils;
+import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class BunnyhopMod implements ModInitializer {
+@Mod(BunnyhopMod.MOD_ID)
+public class BunnyhopMod {
     public static final String MOD_ID = "bunnyhop";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final Logger LOGGER = LogUtils.getLogger();
 
-    @Override
-    public void onInitialize() {
-        LOGGER.info("Bunnyhop movement core loaded");
+    public BunnyhopMod() {
+        LOGGER.info("Bunnyhop Forge movement core loaded");
     }
 }
+            

@@ -1,9 +1,9 @@
 .gradle/
 build/
 out/
+run/
+logs/
 .idea/
 *.iml
-run/
-
-# Gradle wrapper cache
-!gradle/wrapper/gradle-wrapper.jar
+*.ipr
+*.iws
