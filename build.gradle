@@ -79,3 +79,27 @@ publishing {
         }
     }
 }
+
+
+tasks.register('verifyNoFabricLeftovers') {
+    group = 'verification'
+    description = 'Fails the build if Fabric-only files were accidentally kept in the Forge branch.'
+
+    doLast {
+        def forbiddenFiles = [
+                'src/main/resources/fabric.mod.json',
+                'src/main/resources/bunnyhop.mixins.json',
+                'src/main/java/dev/bunnyhop/mixin/PlayerEntityMixin.java'
+        ]
+
+        def existingForbidden = forbiddenFiles.findAll { file(it).exists() }
+        if (!existingForbidden.isEmpty()) {
+            throw new GradleException('Forge project contains Fabric leftovers: ' + existingForbidden.join(', ') +
+                    '. Remove these files and keep only Forge sources/resources.')
+        }
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('verifyNoFabricLeftovers')
+}
