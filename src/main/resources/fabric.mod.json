@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "bunnyhop",
+  "version": "${version}",
+  "name": "Bunnyhop",
+  "description": "Source-style bunnyhop movement overhaul for Minecraft.",
+  "authors": [
+    "Codex"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.bunnyhop.BunnyhopMod"
+    ]
+  },
+  "mixins": [
+    "bunnyhop.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
